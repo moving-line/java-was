@@ -3,15 +3,18 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Map;
 
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.IOUtils;
 
 import static java.nio.charset.StandardCharsets.*;
 import static util.HttpRequestUtils.getUrl;
 import static util.HttpRequestUtils.parseQueryString;
+import static util.IOUtils.*;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -34,11 +37,21 @@ public class RequestHandler extends Thread {
             }
 
             String url = getUrl(line);
+            Map<String, String> headers = new HashMap<>();
+
+            while(!line.equals("")) {
+                line = br.readLine();
+                String[] headerTokens = line.split(": ");
+
+                if(headerTokens.length == 2) {
+                    headers.put(headerTokens[0], headerTokens[1]);
+                }
+            }
 
             if(url.startsWith("/user/create")) {
-                int index = url.indexOf("?");
-                String queryString = url.substring(index + 1);
-                Map<String, String> map = parseQueryString(queryString);
+                String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
+
+                Map<String, String> map = parseQueryString(requestBody);
                 User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
                 log.debug("User : {}", user);
 
