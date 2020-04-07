@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
+import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,10 +54,31 @@ public class RequestHandler extends Thread {
 
                 Map<String, String> map = parseQueryString(requestBody);
                 User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
+                DataBase.addUser(user);
                 log.debug("User : {}", user);
 
                 DataOutputStream dos = new DataOutputStream(out);
                 response302Header(dos);
+            } else if(url.equals("/user/login")) {
+                String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
+
+                Map<String, String> map = parseQueryString(requestBody);
+                log.debug("userId : {}, password : {}", map.get("userId"), map.get("password"));
+                User findUser = DataBase.findUserById(map.get("userId"));
+                if(findUser == null) {
+                    DataOutputStream dos = new DataOutputStream(out);
+                    response302Header(dos);
+                    log.debug("User Not Found!");
+                } else if(findUser.getPassword().equals(map.get("password"))){
+                    DataOutputStream dos = new DataOutputStream(out);
+                    response302HeaderWithCookie(dos, "logined=true");
+                    log.debug("Login Success!");
+                } else {
+                    DataOutputStream dos = new DataOutputStream(out);
+                    response302HeaderWithCookie(dos, "logined=false");
+                    log.debug("Password Wrong!");
+                }
+
             } else {
                 DataOutputStream dos = new DataOutputStream(out);
                 byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
@@ -64,6 +86,17 @@ public class RequestHandler extends Thread {
                 responseBody(dos, body);
             }
 
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302HeaderWithCookie(DataOutputStream dos, String cookie) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html \r\n");
+            dos.writeBytes("Set-Cookie: " + cookie + "\r\n");
+            dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
