@@ -34,23 +34,23 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             BufferedReader br = new BufferedReader(new InputStreamReader(in, UTF_8));
             String line = br.readLine();
-            if(line == null) {
+            if (line == null) {
                 return;
             }
 
             String url = getUrl(line);
             Map<String, String> headers = new HashMap<>();
 
-            while(!line.equals("")) {
+            while (!line.equals("")) {
                 line = br.readLine();
                 String[] headerTokens = line.split(": ");
 
-                if(headerTokens.length == 2) {
+                if (headerTokens.length == 2) {
                     headers.put(headerTokens[0], headerTokens[1]);
                 }
             }
 
-            if(url.startsWith("/user/create")) {
+            if (url.startsWith("/user/create")) {
                 String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
 
                 Map<String, String> map = parseQueryString(requestBody);
@@ -61,17 +61,17 @@ public class RequestHandler extends Thread {
                 DataOutputStream dos = new DataOutputStream(out);
                 response302Header(dos);
 
-            } else if(url.equals("/user/login")) {
+            } else if (url.equals("/user/login")) {
                 String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
 
                 Map<String, String> map = parseQueryString(requestBody);
                 log.debug("userId : {}, password : {}", map.get("userId"), map.get("password"));
                 User findUser = DataBase.findUserById(map.get("userId"));
-                if(findUser == null) {
+                if (findUser == null) {
                     DataOutputStream dos = new DataOutputStream(out);
                     response302Header(dos);
                     log.debug("User Not Found!");
-                } else if(findUser.getPassword().equals(map.get("password"))){
+                } else if (findUser.getPassword().equals(map.get("password"))) {
                     DataOutputStream dos = new DataOutputStream(out);
                     response302HeaderWithCookie(dos, "logined=true");
                     log.debug("Login Success!");
@@ -81,7 +81,7 @@ public class RequestHandler extends Thread {
                     log.debug("Password Wrong!");
                 }
 
-            } else if(url.startsWith("/user/list")) {
+            } else if (url.startsWith("/user/list")) {
                 String cookie = headers.get("Cookie");
 
                 DataOutputStream dos = new DataOutputStream(out);
@@ -93,6 +93,12 @@ public class RequestHandler extends Thread {
                 } else {
                     response302HeaderLogin(dos);
                 }
+
+            } else if (url.endsWith(".css")) {
+                DataOutputStream dos = new DataOutputStream(out);
+                byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+                response200HeaderWithCss(dos, body.length);
+                responseBody(dos, body);
 
             } else {
                 DataOutputStream dos = new DataOutputStream(out);
@@ -141,6 +147,17 @@ public class RequestHandler extends Thread {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response200HeaderWithCss(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/css;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
