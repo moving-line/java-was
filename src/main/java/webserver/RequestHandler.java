@@ -3,6 +3,7 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,6 +60,7 @@ public class RequestHandler extends Thread {
 
                 DataOutputStream dos = new DataOutputStream(out);
                 response302Header(dos);
+
             } else if(url.equals("/user/login")) {
                 String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
 
@@ -77,6 +79,19 @@ public class RequestHandler extends Thread {
                     DataOutputStream dos = new DataOutputStream(out);
                     response302HeaderWithCookie(dos, "logined=false");
                     log.debug("Password Wrong!");
+                }
+
+            } else if(url.startsWith("/user/list")) {
+                String cookie = headers.get("Cookie");
+
+                DataOutputStream dos = new DataOutputStream(out);
+
+                if (cookie != null && cookie.contains("logined=true")) {
+                    byte[] body = ViewFactory.generateUsers().getBytes();
+                    response200Header(dos, body.length);
+                    responseBody(dos, body);
+                } else {
+                    response302HeaderLogin(dos);
                 }
 
             } else {
@@ -106,6 +121,16 @@ public class RequestHandler extends Thread {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
             dos.writeBytes("Location: /index.html \r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302HeaderLogin(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /user/login.html \r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
