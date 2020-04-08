@@ -32,4 +32,8 @@ public class RequestLine {
     public String getParam(String key) {
         return params.get(key);
     }
+
+    public boolean matchMethod(HttpMethod method) {
+        return this.method.equals(method);
+    }
 }

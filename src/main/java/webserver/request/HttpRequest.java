@@ -54,4 +54,8 @@ public class HttpRequest {
     public String getBody(String bodyKey) {
         return body.getBody(bodyKey);
     }
+
+    public boolean matchMethod(HttpMethod method) {
+        return line.matchMethod(method);
+    }
 }
