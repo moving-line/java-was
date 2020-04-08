@@ -1,22 +1,20 @@
 package webserver;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.IOUtils;
+import webserver.request.HttpRequest;
 
-import static java.nio.charset.StandardCharsets.*;
-import static util.HttpRequestUtils.getUrl;
+import java.io.*;
+import java.net.Socket;
+import java.nio.file.Files;
+import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static util.HttpRequestUtils.parseQueryString;
-import static util.IOUtils.*;
+import static util.IOUtils.CONTENT_LENGTH;
+import static util.IOUtils.readData;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -28,30 +26,16 @@ public class RequestHandler extends Thread {
     }
 
     public void run() {
-        log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
-                connection.getPort());
+        log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(), connection.getPort());
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             BufferedReader br = new BufferedReader(new InputStreamReader(in, UTF_8));
-            String line = br.readLine();
-            if (line == null) {
-                return;
-            }
 
-            String url = getUrl(line);
-            Map<String, String> headers = new HashMap<>();
-
-            while (!line.equals("")) {
-                line = br.readLine();
-                String[] headerTokens = line.split(": ");
-
-                if (headerTokens.length == 2) {
-                    headers.put(headerTokens[0], headerTokens[1]);
-                }
-            }
+            HttpRequest request = new HttpRequest(in);
+            String url = request.getPath();
 
             if (url.startsWith("/user/create")) {
-                String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
+                String requestBody = readData(br, Integer.parseInt(request.getHeader(CONTENT_LENGTH)));
 
                 Map<String, String> map = parseQueryString(requestBody);
                 User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
@@ -62,7 +46,7 @@ public class RequestHandler extends Thread {
                 response302Header(dos);
 
             } else if (url.equals("/user/login")) {
-                String requestBody = readData(br, Integer.parseInt(headers.get("Content-Length")));
+                String requestBody = readData(br, Integer.parseInt(request.getHeader(CONTENT_LENGTH)));
 
                 Map<String, String> map = parseQueryString(requestBody);
                 log.debug("userId : {}, password : {}", map.get("userId"), map.get("password"));
@@ -82,7 +66,7 @@ public class RequestHandler extends Thread {
                 }
 
             } else if (url.startsWith("/user/list")) {
-                String cookie = headers.get("Cookie");
+                String cookie = request.getHeader("Cookie");
 
                 DataOutputStream dos = new DataOutputStream(out);
 
