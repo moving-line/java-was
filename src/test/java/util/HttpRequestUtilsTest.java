@@ -71,10 +71,4 @@ public class HttpRequestUtilsTest {
         assertThat(pair, is(new Pair("Content-Length", "59")));
     }
 
-    @Test
-    public void getUrl() {
-        String headerLine = "GET /index.html HTTP/1.1";
-        String url = HttpRequestUtils.getUrl(headerLine);
-        assertThat(url, is("/index.html"));
-    }
 }

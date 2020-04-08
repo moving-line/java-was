@@ -1,4 +1,4 @@
-package webserver;
+package view;
 
 import db.DataBase;
 import model.User;
@@ -79,9 +79,9 @@ public class ViewFactory {
                 "    </div>\n" +
                 "    <div class=\"collapse navbar-collapse\" id=\"navbar-collapse2\">\n" +
                 "      <ul class=\"nav navbar-nav navbar-right\">\n" +
-                "        <li class=\"active\"><a href=\"../index.html\">Posts</a></li>\n" +
-                "        <li><a href=\"../user/login.html\" role=\"button\">로그인</a></li>\n" +
-                "        <li><a href=\"../user/form.html\" role=\"button\">회원가입</a></li>\n" +
+                "        <li class=\"active\"><a href=\"/index\">Posts</a></li>\n" +
+                "        <li><a href=\"/user/login\" role=\"button\">로그인</a></li>\n" +
+                "        <li><a href=\"/user/create\" role=\"button\">회원가입</a></li>\n" +
                 "        <li><a href=\"#\" role=\"button\">로그아웃</a></li>\n" +
                 "        <li><a href=\"#\" role=\"button\">개인정보수정</a></li>\n" +
                 "      </ul>\n" +
